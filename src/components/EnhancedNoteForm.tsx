@@ -91,11 +91,18 @@ const EnhancedNoteForm: React.FC<EnhancedNoteFormProps> = ({ note, onClose, onSa
     setShowColorPicker(false);
   };
 
-  const handleContentChange = () => {
-    if (contentRef.current) {
-      setContent(contentRef.current.innerHTML);
-    }
-  };
+const handleContentChange = () => {
+  if (contentRef.current) {
+    // Get only the plain text (no weird auto styles)
+    const text = contentRef.current.innerText;
+
+    // Wrap it in controlled markup that always enforces left-to-right
+    const sanitized = `<div dir="ltr" style="direction:ltr; unicode-bidi:bidi-override;">${text}</div>`;
+
+    // Save that instead of raw browser HTML
+    setContent(sanitized);
+  }
+};
 
   const toggleFriendSelection = (friendId: string) => {
     setSelectedFriends(prev => 
