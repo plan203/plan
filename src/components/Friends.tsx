@@ -42,7 +42,7 @@ const Friends: React.FC = () => {
           alert('✅ Success!\n\nFriend request sent successfully!');
         }, 100);
       } else {
-        setAddFriendError('Failed to send friend request. User may not exist or you may already be friends.');
+        setAddFriendError('You must be logged in to send a friend request.');
       }
     } catch (error) {
       if (error instanceof Error) {
