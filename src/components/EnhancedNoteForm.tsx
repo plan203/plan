@@ -242,7 +242,7 @@ const EnhancedNoteForm: React.FC<EnhancedNoteFormProps> = ({ note, onClose, onSa
                 className={`w-full min-h-[300px] px-4 py-3 border border-t-0 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800'}`}
                 style={{ 
                   direction: 'ltr', 
-                  unicodeBidi: 'plaintext',
+                  unicodeBidi: 'bidi-override', 
                   fontFamily: 'Times New Roman, serif',
                   fontSize: '16px',
                   lineHeight: '1.6',
