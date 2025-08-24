@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Profile creation error:', profileErr);
         }
 
-        return false;
+        return true;
       }
 
       return !!data.user;
