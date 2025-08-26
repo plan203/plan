@@ -415,27 +415,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (targetUsers && targetUsers.length > 0) {
         targetUser = targetUsers[0];
       } else {
-        // If not found in users table, check auth.users table
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-        
-        if (authError) {
-          console.error('Error checking auth users:', authError);
-          // Fall back to original error if we can't check auth users
-          throw new Error('User not found with this email address');
-        }
-        
-        const authUser = authUsers.users.find(u => u.email === email.trim());
-        
-        if (!authUser) {
-          throw new Error('User not found with this email address');
-        }
-        
-        // Create a user object compatible with our interface
-        targetUser = {
-          id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Unknown User',
-          email: authUser.email || email.trim()
-        };
+        throw new Error('User not found with this email address');
       }
 
       if (targetUser.id === user.id) {
