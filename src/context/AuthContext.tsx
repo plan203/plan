@@ -83,38 +83,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
 
-      // If user is created but not confirmed, still return success
-      if (data.user) {
-        // Try to create user profile immediately
-        try {
-          const { error: profileError } = await supabase
-            .from('users')
-            .insert([{
-              id: data.user.id,
-              name: name,
-              email: email,
-              institution: institution || null,
-              phone: phone || null
-            }]);
+      // If user is created, create profile in users table
+        // Create user profile in users table - this is critical for friend requests
+        const { error: profileError } = await supabase
+          .from('users')
+          .upsert([{
+            id: data.user.id,
+            name: name,
+            email: email,
+            institution: institution || null,
+            phone: phone || null
+          }], {
+            onConflict: 'id'
+          });
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Don't fail registration if profile creation fails
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // If profile creation fails, delete the auth user to maintain consistency
+          try {
+            await supabase.auth.admin.deleteUser(data.user.id);
+          } catch (deleteError) {
+            console.error('Failed to cleanup auth user:', deleteError);
           }
-        } catch (profileErr) {
-          console.error('Profile creation error:', profileErr);
+          throw new Error('Failed to create user profile. Please try again.');
         }
 
         return true;
       }
 
-      return !!data.user;
+      return false;
     } catch (error) {
       console.error('Registration error:', error);
       if (error instanceof Error) {
         throw error; // Re-throw to preserve the specific error message
       }
-      return false;
+      throw new Error('Registration failed. Please try again.');
     }
   };
 

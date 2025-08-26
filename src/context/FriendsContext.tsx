@@ -398,7 +398,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user) return false;
 
     try {
-      // First check if user exists in the users table
+      // Check if user exists in the users table
       const { data: targetUsers, error: userError } = await supabase
         .from('users')
         .select('id, name, email')
@@ -415,7 +415,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (targetUsers && targetUsers.length > 0) {
         targetUser = targetUsers[0];
       } else {
-        throw new Error('User not found with this email address');
+        throw new Error('User not found with this email address. Make sure the user has registered and completed their profile setup.');
       }
 
       if (targetUser.id === user.id) {
@@ -426,18 +426,11 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { data: existingFriendships, error: friendError } = await supabase
         .from('friends')
         .select('id')
-        .or(`user_id.eq.${user.id},user_id.eq.${targetUser.id}`)
-        .or(`friend_id.eq.${user.id},friend_id.eq.${targetUser.id}`);
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${user.id})`);
 
       if (friendError) throw friendError;
 
-      // Check if there's a friendship in either direction
-      const isFriend = existingFriendships?.some(friendship => 
-        (friendship.user_id === user.id && friendship.friend_id === targetUser.id) ||
-        (friendship.user_id === targetUser.id && friendship.friend_id === user.id)
-      );
-
-      if (isFriend) {
+      if (existingFriendships && existingFriendships.length > 0) {
         throw new Error('Already friends with this user');
       }
 
@@ -445,19 +438,12 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { data: existingRequests, error: requestError } = await supabase
         .from('friend_requests')
         .select('id, status')
-        .or(`sender_id.eq.${user.id},sender_id.eq.${targetUser.id}`)
-        .or(`receiver_id.eq.${user.id},receiver_id.eq.${targetUser.id}`)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUser.id}),and(sender_id.eq.${targetUser.id},receiver_id.eq.${user.id})`)
         .eq('status', 'pending');
 
       if (requestError) throw requestError;
 
-      // Check if there's a pending request in either direction
-      const hasPendingRequest = existingRequests?.some(request => 
-        (request.sender_id === user.id && request.receiver_id === targetUser.id) ||
-        (request.sender_id === targetUser.id && request.receiver_id === user.id)
-      );
-
-      if (hasPendingRequest) {
+      if (existingRequests && existingRequests.length > 0) {
         throw new Error('Friend request already pending');
       }
 
