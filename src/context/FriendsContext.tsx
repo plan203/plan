@@ -398,7 +398,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user) return false;
 
     try {
-      // First check if user exists
+      // First check if user exists in the users table
       const { data: targetUsers, error: userError } = await supabase
         .from('users')
         .select('id, name, email')
@@ -410,11 +410,33 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('Failed to check if user exists');
       }
 
-      if (!targetUsers || targetUsers.length === 0) {
-        throw new Error('User not found with this email address');
+      let targetUser = null;
+      
+      if (targetUsers && targetUsers.length > 0) {
+        targetUser = targetUsers[0];
+      } else {
+        // If not found in users table, check auth.users table
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        
+        if (authError) {
+          console.error('Error checking auth users:', authError);
+          // Fall back to original error if we can't check auth users
+          throw new Error('User not found with this email address');
+        }
+        
+        const authUser = authUsers.users.find(u => u.email === email.trim());
+        
+        if (!authUser) {
+          throw new Error('User not found with this email address');
+        }
+        
+        // Create a user object compatible with our interface
+        targetUser = {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Unknown User',
+          email: authUser.email || email.trim()
+        };
       }
-
-      const targetUser = targetUsers[0];
 
       if (targetUser.id === user.id) {
         throw new Error('You cannot add yourself as a friend');
